@@ -8,7 +8,6 @@ use App\Models\Schedule;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use App\Models\Task;
 
 
 class TaskScheduleController extends Controller
@@ -17,7 +16,7 @@ class TaskScheduleController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $tasks = Task::where('user_id', $user->id)->orderBy('due_date', 'asc')->get();
+        $tasks = Schedule::where('user_id', $user->id)->orderBy('due_date', 'asc')->get();
         return response()->json(['data' => $tasks]);
     }
 
@@ -30,7 +29,7 @@ class TaskScheduleController extends Controller
             'due_date' => 'nullable|date',
         ]);
 
-        $task = Task::create([
+        $task = Schedule::create([
             'user_id' => Auth::id(),
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
@@ -43,7 +42,7 @@ class TaskScheduleController extends Controller
     // Update tugas (status / detail)
     public function update(Request $request, $id)
     {
-        $task = Task::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
+        $task = Schedule::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
 
         $task->update($request->only(['title', 'description', 'status', 'due_date']));
 
@@ -53,7 +52,7 @@ class TaskScheduleController extends Controller
     // Hapus tugas
     public function destroy($id)
     {
-        $task = Task::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
+        $task = Schedule::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
         $task->delete();
 
         return response()->json(['message' => 'Tugas berhasil dihapus']);
@@ -65,7 +64,7 @@ class TaskScheduleController extends Controller
         $user = Auth::user();
         $today = Carbon::today()->toDateString();
 
-        $tasks = Task::where('user_id', $user->id)
+        $tasks = Schedule::where('user_id', $user->id)
                      ->whereDate('due_date', $today)
                      ->get();
 
@@ -77,14 +76,14 @@ public function report(Request $request)
     $userId = $request->user()->id;
 
     // 1. Hitung jumlah tugas berdasarkan status
-    $statusCount = Task::where('user_id', $userId)
+    $statusCount = Schedule::where('user_id', $userId)
         ->select('status', DB::raw('count(*) as total'))
         ->groupBy('status')
         ->get()
         ->pluck('total', 'status');
 
     // 2. Ambil data produktivitas bulanan
-    $monthlyData = Task::where('user_id', $userId)
+    $monthlyData = Schedule::where('user_id', $userId)
         ->whereYear('due_date', now()->year)
         ->select(
             DB::raw('MONTH(due_date) as month'),
