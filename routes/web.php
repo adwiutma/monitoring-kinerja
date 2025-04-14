@@ -16,8 +16,12 @@ use App\Http\Controllers\API\AttendanceController;
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return response()->json([
+        'message' => 'Welcome to the API',
+        'status' => 'success',
+    ], 200);
 });
+
 Route::get('/users', [AuthController::class, 'getAllUsers']);
 
 Route::post('/login', [AuthController::class, 'login']);

@@ -2,6 +2,10 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\FeedbackController;
+use App\Http\Controllers\API\AttendanceController;
+use App\Http\Controllers\API\NotificationController;
+use App\Http\Controllers\API\TaskScheduleController;
 
 /*
 |--------------------------------------------------------------------------
