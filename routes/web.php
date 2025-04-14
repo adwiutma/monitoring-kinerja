@@ -15,6 +15,7 @@ use App\Http\Controllers\API\AttendanceController;
 |
 */
 
+// say hello
 Route::get('/', function () {
     return response()->json([
         'message' => 'Welcome to the API',
@@ -22,11 +23,14 @@ Route::get('/', function () {
     ], 200);
 });
 
+// debug - rute hanya untuk pengembangan
 Route::get('/users', [AuthController::class, 'getAllUsers']);
-
-Route::post('/login', [AuthController::class, 'login']);
-
 Route::get('/test', [AuthController::class, 'test']);
 
+// register dan login
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+
+// rute untuk kehadiran karyawan
 Route::post('/attendance/check-in', [AttendanceController::class, 'checkIn']);
 Route::put('/attendance/check-out/{id}', [AttendanceController::class, 'checkOut']);

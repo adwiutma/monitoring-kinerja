@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Models\Schedule;
-use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use App\Models\User;
+use App\Models\Schedule;
+use Illuminate\Http\Request;
+use App\Models\CustomNotification;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 
 class TaskScheduleController extends Controller
@@ -71,37 +74,82 @@ class TaskScheduleController extends Controller
         return response()->json(['data' => $tasks]);
     }
 
-public function report(Request $request)
-{
-    $userId = $request->user()->id;
+    public function report(Request $request)
+    {
+        $userId = $request->user()->id;
 
-    // 1. Hitung jumlah tugas berdasarkan status
-    $statusCount = Schedule::where('user_id', $userId)
-        ->select('status', DB::raw('count(*) as total'))
-        ->groupBy('status')
-        ->get()
-        ->pluck('total', 'status');
+        // 1. Hitung jumlah tugas berdasarkan status
+        $statusCount = Schedule::where('user_id', $userId)
+            ->select('status', DB::raw('count(*) as total'))
+            ->groupBy('status')
+            ->get()
+            ->pluck('total', 'status');
 
-    // 2. Ambil data produktivitas bulanan
-    $monthlyData = Schedule::where('user_id', $userId)
-        ->whereYear('due_date', now()->year)
-        ->select(
-            DB::raw('MONTH(due_date) as month'),
-            DB::raw('count(*) as total'),
-            DB::raw("SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed")
-        )
-        ->groupBy(DB::raw('MONTH(due_date)'))
-        ->get();
+        // 2. Ambil data produktivitas bulanan
+        $monthlyData = Schedule::where('user_id', $userId)
+            ->whereYear('due_date', now()->year)
+            ->select(
+                DB::raw('MONTH(due_date) as month'),
+                DB::raw('count(*) as total'),
+                DB::raw("SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed")
+            )
+            ->groupBy(DB::raw('MONTH(due_date)'))
+            ->get();
 
-    // 3. Hitung poin kinerja (misalnya: 10 poin per tugas selesai)
-    $totalCompleted = $statusCount['completed'] ?? 0;
-    $points = $totalCompleted * 10;
+        // 3. Hitung poin kinerja (misalnya: 10 poin per tugas selesai)
+        $totalCompleted = $statusCount['completed'] ?? 0;
+        $points = $totalCompleted * 10;
 
-    return response()->json([
-        'status_count' => $statusCount,
-        'monthly_productivity' => $monthlyData,
-        'performance_points' => $points,
+        return response()->json([
+            'status_count' => $statusCount,
+            'monthly_productivity' => $monthlyData,
+            'performance_points' => $points,
             'message' => 'Laporan kinerja berhasil diambil'
+        ]);
+    }
+
+    public function makeNotification(Request $request){
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|exists:users,id',
+            'title' => 'required|string|max:255',
+            'message' => 'required|string'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        // ini untuk membuat data notifikasi baru
+        CustomNotification::create([
+            'user_id' => $request->user_id,
+            'title' => $request->title,
+            'message' => $request->message,
+            'is_read' => false,
+        ]); // akan ada pengecekan ada/tidak notifikasi di tiap user
+    }
+
+    public function getNotification(Request $request){
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|exists:users,id'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        // mencari user berdasarkan id nya
+        $user = User::where('id', $request->user_id)->first();
+        
+        // mencari data notifikasi berdasarkan user id nya
+        $notifications = CustomNotification::where('user_id', $user->id)->orderBy('created_at', 'desc')->get();
+
+        // mengembalikan data notifikasi
+        return response()->json([
+            'data' => $notifications
         ]);
     }
 }
