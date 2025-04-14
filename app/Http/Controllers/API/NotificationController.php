@@ -28,4 +28,9 @@ class NotificationController extends Controller
 
         return response()->json(['message' => 'Notification marked as read']);
     }
+
+    public function isTodayHoliday(){
+        // gunakan API hari libur
+        // ketika hari libur, buat notifikasi
+    } // panggil fungsi ini setiap hari 1 kali secara otomatis
 }

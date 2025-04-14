@@ -34,3 +34,9 @@ Route::post('/login', [AuthController::class, 'login']);
 // rute untuk kehadiran karyawan
 Route::post('/attendance/check-in', [AttendanceController::class, 'checkIn']);
 Route::put('/attendance/check-out/{id}', [AttendanceController::class, 'checkOut']);
+
+// rute untuk data karyawan
+Route::post('/get-identity', [AuthController::class, 'getUserIdentity']);
+Route::post('/add-identity', [AuthController::class, 'addIdentity']);
+
+// rute untuk menambahkan data tertentu
